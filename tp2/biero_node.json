@@ -5,11 +5,11 @@
         "description": "Webservice pour accéder aux données du catalogue de bière",
         "version": "1.0.0"
     },
-    "host": "127.0.0.1:8000",
+    "host": "127.0.0.1:8081",
     "schemes": [
         "http"
     ],
-    "basePath": "webService/php",
+    "basePath": "/",
     "produces": [
         "application/json"
     ],

@@ -83,31 +83,20 @@ app.route("/biere/")
         });
     })
     .put(function (req, res, next) {
-    
-        var monId =  new mongo.ObjectId(req.params.id);
         mongoClient.connect("mongodb://localhost:27017", function (error, db) {
-        if (!error) {
-            db = db.db("mesBieres"); //nom de la db
-            db.collection("bieres").find({_id : monId}).toArray(function (err, documents) {
-                if (!err) {
-                    for (var i = 0; i < documents.length; i++) {
-                        var nbComm = documents[i]["commentaires"].length;
-                        for (var j = 0; j < nbComm; j++) {
-                            //var monComm = documents[i]["commentaires"][j].commentaire;
-                            //var monCourriel = documents[i]["commentaires"][j].courriel;
-                            documents[i].commentaires[j].id_biere = monId;
-                        }
-                    }
-                    res.json(documents[0].commentaires);
-                }
-            })
-        }
-        db.close();
+            if (!error) {
+               var maBiere= req.body;
+                var d = new Date();
+                var n = d.getTime();
+                db = db.db("mesBieres"); //nom de la db
+                maBiere.date_ajout = n;
+                maBiere.date_modif = n;
+                maBiere.commentaires =[];
+                maBiere.notes =[];
+                db.collection("bieres").insert(maBiere)
+            }
+            db.close();
         });
-    
-    
-    
-    //    res.send("PUT");
     });
 
 app.route("/biere/:id")
@@ -144,22 +133,14 @@ app.route("/biere/:id")
             }
             db.close();
         });
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-     
     })
     .post(function (req, res, next) {
-        res.send("POST : id = " + req.params.id);
+    var monId =  new mongo.ObjectId(req.params.id);
+    
+    
+    
+    
+        //res.send("POST : id = " + req.params.id);
     })
     .delete(function (req, res, next) {
     var monId =  new mongo.ObjectId(req.params.id);
@@ -184,14 +165,12 @@ app.route("/biere/:id/commentaire")
             db = db.db("mesBieres"); //nom de la db
             db.collection("bieres").find({_id : monId}).toArray(function (err, documents) {
                 if (!err) {
-                    for (var i = 0; i < documents.length; i++) {
-                        var nbComm = documents[i]["commentaires"].length;
+                    
+                        var nbComm = documents[0]["commentaires"].length;
                         for (var j = 0; j < nbComm; j++) {
-                            //var monComm = documents[i]["commentaires"][j].commentaire;
-                            //var monCourriel = documents[i]["commentaires"][j].courriel;
-                            documents[i].commentaires[j].id_biere = monId;
+                            documents[0].commentaires[j].id_biere = monId;
                         }
-                    }
+                   
                     res.json(documents[0].commentaires);
                 }
             })
@@ -200,8 +179,37 @@ app.route("/biere/:id/commentaire")
         });
     })
     .put(function (req, res, next) {
-        //body parser
-        res.send("PUT commentaire : id = " + req.params.id);
+        var monId =  new mongo.ObjectId(req.params.id);
+        var maBiere= req.body;
+    
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+            if (!error) {
+                db = db.db("mesBieres"); //nom de la db
+                db.collection("bieres").findOneAndUpdate({_id : monId} );
+                                                         
+                var d = new Date();
+                var n = d.getTime();
+                db = db.db("mesBieres"); //nom de la db
+                maBiere.date_ajout = n;
+                maBiere.date_modif = n;
+                maBiere.commentaires =[];
+                maBiere.notes =[];
+                //db.collection("bieres").insert(maBiere)
+            }
+            db.close();
+        });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     });
 app.route("/biere/:id/note")
     .get(function (req, res, next) {
@@ -239,6 +247,33 @@ app.route("/biere/:id/note")
     .put(function (req, res, next) {
         res.send("PUT note : id = " + req.params.id);
     });
+
+app.route("/test/")
+
+    .get(function (req, res, next) {
+        var monId =  new mongo.ObjectId(req.params.id);
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+        if (!error) {
+            db = db.db("mesBieres"); //nom de la db
+            db.collection("bieres").find().toArray(function (err, documents) {
+                /*if (!err) {
+                    for (var i = 0; i < documents.length; i++) {
+                        var nbComm = documents[i]["commentaires"].length;
+                        for (var j = 0; j < nbComm; j++) {
+                            //var monComm = documents[i]["commentaires"][j].commentaire;
+                            //var monCourriel = documents[i]["commentaires"][j].courriel;
+                            documents[i].commentaires[j].id_biere = monId;
+                        }
+                    }
+                    res.json(documents);
+                }*/
+                    res.json(documents);
+            })
+        }
+        db.close();
+        });
+    })
+  
 
 app.all("*", function (req, res) {
     res.status(400).send();

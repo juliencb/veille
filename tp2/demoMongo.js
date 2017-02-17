@@ -19,25 +19,7 @@ var authBasic = function(req, res, next){
         res.status(401).send();
     }
 }
-/*
-var authBasic = function (req, res, next) {
-    return next();
 
-    function unauthorized(res) {
-        res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
-        return res.send(401);
-    };
-    var user = basicAuth(req);
-    if (!user || !user.name || !user.pass) {
-        return unauthorized(res);
-    };
-    if (user.name === 'biero' && user.pass === 'biero') {
-        return next();
-    }
-    else {
-        return unauthorized(res);
-    };
-};*/
 //{nom:"", brasserie:"", notes:[{courriel: "", note:int}, {courriel: "", note:int}], commenataire:[{courriel: "", note:int}, {courriel: "", note:int}]}
 
 app.use(cors());
@@ -45,12 +27,7 @@ app.use(bodyParser.json());
 app.put("*", authBasic);
 app.post("*", authBasic);
 app.delete("*", authBasic);
-/*
-db.collection.find()
-db.collection.insert()
-db.collection.update()
-db.collection.remove()
-*/
+
 
 app.route("/biere/")
     .get(function (req, res, next) {
@@ -93,7 +70,10 @@ app.route("/biere/")
                 maBiere.date_modif = n;
                 maBiere.commentaires =[];
                 maBiere.notes =[];
-                db.collection("bieres").insert(maBiere)
+                db.collection("bieres").insert(maBiere);
+                 /*db.collection("bieres").insert(maBiere, function(err, res){
+                    res.json("yep");
+                })*/
             }
             db.close();
         });
@@ -101,12 +81,8 @@ app.route("/biere/")
 
 app.route("/biere/:id")
     .get(function (req, res, next) {
-    
-    
-    var monId =  new mongo.ObjectId(req.params.id);
-    
-    
-    mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+        var monId =  new mongo.ObjectId(req.params.id); 
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
             if (!error) {
                 db = db.db("mesBieres"); //nom de la db
                 db.collection("bieres").find({_id : monId}).toArray(function (err, documents) {
@@ -128,32 +104,30 @@ app.route("/biere/:id")
                         }
                         res.json(documents);
                     }
-                    //res.status(400).send();
                 })
             }
             db.close();
         });
     })
     .post(function (req, res, next) {
-    var monId =  new mongo.ObjectId(req.params.id);
+    
+        var monId =  new mongo.ObjectId(req.params.id);
+        var maBiere = req.body;
     
     
     
     
-        //res.send("POST : id = " + req.params.id);
     })
     .delete(function (req, res, next) {
-    var monId =  new mongo.ObjectId(req.params.id);
-    //var monId =  new mongo.ObjectId(58a5c3a7d10b6c093f08997e);
-      mongoClient.connect("mongodb://localhost:27017", function (error, db) {
-        if (!error) {
-            db = db.db("mesBieres"); //nom de la db
-            db.collection("bieres").remove({_id : monId});
-            res.json("byebye");
-        }
-        db.close();
+        var monId =  new mongo.ObjectId(req.params.id);
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+            if (!error) {
+                db = db.db("mesBieres"); //nom de la db
+                db.collection("bieres").remove({_id : monId});
+                res.json("byebye");
+            }
+            db.close();
         });
-    
     });
 
 app.route("/biere/:id/commentaire")
@@ -180,36 +154,17 @@ app.route("/biere/:id/commentaire")
     })
     .put(function (req, res, next) {
         var monId =  new mongo.ObjectId(req.params.id);
-        var maBiere= req.body;
-    
+        var monCommentaire= req.body;
+        var d = new Date();
+        var n = d.getTime();
+        monCommentaire.date_ajout = n;
         mongoClient.connect("mongodb://localhost:27017", function (error, db) {
             if (!error) {
                 db = db.db("mesBieres"); //nom de la db
-                db.collection("bieres").findOneAndUpdate({_id : monId} );
-                                                         
-                var d = new Date();
-                var n = d.getTime();
-                db = db.db("mesBieres"); //nom de la db
-                maBiere.date_ajout = n;
-                maBiere.date_modif = n;
-                maBiere.commentaires =[];
-                maBiere.notes =[];
-                //db.collection("bieres").insert(maBiere)
+                db.collection("bieres").updateOne({_id:monId}, {$addToSet:{commentaires: monCommentaire}});           
             }
             db.close();
         });
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     });
 app.route("/biere/:id/note")
     .get(function (req, res, next) {
@@ -245,7 +200,39 @@ app.route("/biere/:id/note")
         });
     })
     .put(function (req, res, next) {
-        res.send("PUT note : id = " + req.params.id);
+    
+        var maNote= req.body;
+        var monCourriel = maNote.courriel;
+        
+    
+     /*
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+            if (!error) {
+                db = db.db("mesBieres"); //nom de la db
+                db.collection("bieres").find({_id : maNote.id_biere}).toArray(function (err, documents) {
+                    if (!err) {
+                        var nbComm = documents[0]["notes"].length;
+                        for (var i = 0; i < nbComm; i++) {
+                            if(documents[0].notes[i].courriel === monCourriel){
+                                documents[0].notes[i].note = maNote.note;
+                            }
+                        }
+                       
+                        db.collection("bieres").updateOne({_id:monId}, {$addToSet:{notes: documents[0].notes}}); 
+                        
+                    }
+                })
+            }
+        });*/
+    
+    /*
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+            if (!error) {
+                db = db.db("mesBieres"); //nom de la db
+                db.collection("bieres").updateOne({_id:monId}, {$addToSet:{note: maNote}});           
+            }
+            db.close();
+        });*/
     });
 
 app.route("/test/")
@@ -256,17 +243,7 @@ app.route("/test/")
         if (!error) {
             db = db.db("mesBieres"); //nom de la db
             db.collection("bieres").find().toArray(function (err, documents) {
-                /*if (!err) {
-                    for (var i = 0; i < documents.length; i++) {
-                        var nbComm = documents[i]["commentaires"].length;
-                        for (var j = 0; j < nbComm; j++) {
-                            //var monComm = documents[i]["commentaires"][j].commentaire;
-                            //var monCourriel = documents[i]["commentaires"][j].courriel;
-                            documents[i].commentaires[j].id_biere = monId;
-                        }
-                    }
-                    res.json(documents);
-                }*/
+             
                     res.json(documents);
             })
         }
@@ -282,3 +259,13 @@ app.all("*", function (req, res) {
 app.listen(8080, function () {
     console.log("weeeeeeeeeeeeee");
 });
+
+
+
+
+
+
+
+/*
+[{"_id":"58a6fdc482be0305ff59aed7","nom":"IPA du diable","brasserie":"Ma brasserie","description":"Une bière de grande qualité avec beaucoup d'amertume","image":"","date_ajout":1487338948821,"date_modif":1487338948821,"commentaires":[],"notes":[]},{"_id":"58a6fe3c82be0305ff59aed9","nom":"IPA du diable","brasserie":"Ma brasserie","description":"Une bière de grande qualité avec beaucoup d'amertume","image":"","date_ajout":1487339068919,"date_modif":1487339068919,"commentaires":[],"notes":[]},{"_id":"58a70135eea7ba0698510798","nom":"IPA du diable","brasserie":"Ma brasserie","description":"Une bière de grande qualité avec beaucoup d'amertume","image":"","date_ajout":1487339829230,"date_modif":1487339829230,"commentaires":[],"notes":[]},{"_id":"58a7016a08d49906a3ceffac","nom":"IPA du diable","brasserie":"Ma brasserie","description":"Une bière de grande qualité avec beaucoup d'amertume","image":"","date_ajout":1487339882746,"date_modif":1487339882746,"commentaires":[],"notes":[]},{"_id":"58a6fd83034cca60d1a64d09","nom":"blue ribbon","brasserie":"pabst","description":"boere de hipster","image":"eurk.jpg","date_ajout":"today","date_modif":"today","notes":{"courriel":"string","commentaire":"string","date_ajout":1487339677167},"commentaires":[{"courriel":"juliencb@hotmail.com","commentaire":"eurk","date_ajout":"today"},{"courriel":"simon@gmail.com","commentaire":"degueux","date_ajout":"today"},{"courriel":"string","commentaire":"string","date_ajout":1487340873130},{"courriel":"string","commentaire":"string","date_ajout":1487340993208}]}]
+*/

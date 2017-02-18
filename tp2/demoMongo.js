@@ -8,6 +8,8 @@ var mongo = require("mongodb"); // npm install body-parser
 var mongoClient = mongo.MongoClient; // npm install body-parser
 
 var authBasic = function(req, res, next){
+    
+        return next();
     var user = basicAuth(req);
     if (!user || !user.name || !user.pass) {
         res.status(401).send();
@@ -110,13 +112,28 @@ app.route("/biere/:id")
         });
     })
     .post(function (req, res, next) {
-    
+        //merci à Simon pour celle là
         var monId =  new mongo.ObjectId(req.params.id);
         var maBiere = req.body;
-    
-    
-    
-    
+        var d = new Date();
+        var n = d.getTime();
+        var biereUpdate ={
+            nom         : maBiere.nom,
+            brasserie   : maBiere.brasserie,
+            description : maBiere.description,
+            image       : maBiere.image,
+            date_modif  : n
+        }            
+        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
+            if (!error) {
+                db = db.db("mesBieres"); //nom de la db
+               
+               db.collection("bieres").updateOne({_id : monId}, {$set:biereUpdate}, function(err, resultat){
+                    res.json(resultat);
+                });
+            }
+            db.close();
+        });
     })
     .delete(function (req, res, next) {
         var monId =  new mongo.ObjectId(req.params.id);
@@ -131,7 +148,6 @@ app.route("/biere/:id")
     });
 
 app.route("/biere/:id/commentaire")
-
     .get(function (req, res, next) {
         var monId =  new mongo.ObjectId(req.params.id);
         mongoClient.connect("mongodb://localhost:27017", function (error, db) {
@@ -201,49 +217,44 @@ app.route("/biere/:id/note")
     })
     .put(function (req, res, next) {
     
-        var maNote= req.body;
-        var monCourriel = maNote.courriel;
+        var monId =  new mongo.ObjectId(req.params.id);
+        var monCourriel = req.body.courriel;
         
     
-     /*
+     
         mongoClient.connect("mongodb://localhost:27017", function (error, db) {
             if (!error) {
                 db = db.db("mesBieres"); //nom de la db
-                db.collection("bieres").find({_id : maNote.id_biere}).toArray(function (err, documents) {
+                db.collection("bieres").find({_id : monId}).toArray(function (err, documents) {
                     if (!err) {
+                        var trouver = false;
                         var nbComm = documents[0]["notes"].length;
                         for (var i = 0; i < nbComm; i++) {
                             if(documents[0].notes[i].courriel === monCourriel){
-                                documents[0].notes[i].note = maNote.note;
+                                documents[0].notes[i].note = req.body.note;
+                                trouver=true;
                             }
                         }
+                        if(trouver){
+                            db.collection("bieres").updateOne({_id:monId}, {notes: documents[0].notes});           
+                        }
+                        else{
+                            db.collection("bieres").updateOne({_id:monId}, {$addToSet:{notes:  req.body}});           
                        
-                        db.collection("bieres").updateOne({_id:monId}, {$addToSet:{notes: documents[0].notes}}); 
-                        
+                        }
                     }
                 })
             }
-        });*/
-    
-    /*
-        mongoClient.connect("mongodb://localhost:27017", function (error, db) {
-            if (!error) {
-                db = db.db("mesBieres"); //nom de la db
-                db.collection("bieres").updateOne({_id:monId}, {$addToSet:{note: maNote}});           
-            }
-            db.close();
-        });*/
+        });
     });
 
 app.route("/test/")
-
     .get(function (req, res, next) {
         var monId =  new mongo.ObjectId(req.params.id);
         mongoClient.connect("mongodb://localhost:27017", function (error, db) {
         if (!error) {
             db = db.db("mesBieres"); //nom de la db
             db.collection("bieres").find().toArray(function (err, documents) {
-             
                     res.json(documents);
             })
         }
@@ -251,7 +262,6 @@ app.route("/test/")
         });
     })
   
-
 app.all("*", function (req, res) {
     res.status(400).send();
 });
@@ -259,10 +269,6 @@ app.all("*", function (req, res) {
 app.listen(8080, function () {
     console.log("weeeeeeeeeeeeee");
 });
-
-
-
-
 
 
 
